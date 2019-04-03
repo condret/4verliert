@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
-import sys, tty, termios, subprocess, random
+import sys, tty, termios, subprocess, random, time
+#import simpleaudio as sa
 
 def getchar():
     fd = sys.stdin.fileno()
@@ -52,6 +53,7 @@ class PlayField:
         self.xsize = xsize
         self.ysize = ysize
         self.field = {}
+ #       self.thunder_wav = sa.WaveObject.from_wave_file("thunder.wav")
         for x in range(xsize):
             for y in range(ysize):
                 self.field.update({(x, y): 0})
@@ -74,7 +76,10 @@ class PlayField:
 
         for y in range(self.ysize - 1, -1, -1):
             if self.field[(x, y)] == 0:
+#                print ("\a",end ="", flush=True)
                 self.field.update({(x, y) : color})
+#                time.sleep(0.1)
+#                self.thunder_wav.play()
                 return (True, y)
 
         return (False, 0)
@@ -195,7 +200,18 @@ class SmartRandomPlayer:
         self.width = width
 
     def play(self, user):
-        return random.randint(0, self.width-1)
+        rel_dst = random.randint(0, self.width-1) - (self.width / 2)
+        while (rel_dst < 0):
+            rel_dst = rel_dst + 1
+            user.move_x(self.color, -1)
+            time.sleep(.100)
+
+        while (rel_dst > 0):
+            rel_dst = rel_dst - 1
+            user.move_x(self.color, 1)
+            time.sleep(.100)
+
+        return user.move_x(self.color, 0)
 
 #class DumbBotPlayer:
 #    def __init__(self, color):
@@ -207,33 +223,34 @@ class SmartRandomPlayer:
 
 
 
-def aaa(user, x, y, color):
+def next_column_in_line(user, x, y, color):
     print (color, end=" ")
 
 
-def bbb(user):
+def next_line(user):
     print ("", end="\n")
 
 
-p0 = DumbHumanPlayer("\x1b[31m0\x1b[37m", 'a', 'd', 's', getchar)    #red
+#p0 = DumbHumanPlayer("\x1b[31m0\x1b[37m", 'a', 'd', 's', getchar)    #red
+p0 = SmartRandomPlayer("\x1b[31m0\x1b[37m", 64)    #cyan
 p1 = SmartRandomPlayer("\x1b[36m0\x1b[37m", 64)    #cyan
 g = Game(64, 8, p0, p1)
 
 cons_user = ConsoleUser(0, 0, 64);
 
 gotoxy (0, 2)
-g.field.expose(aaa, bbb, None)
+g.field.expose(next_column_in_line, next_line, None)
 gotoxy (0, 0)
 print ("V", end="", flush=True)
 
 while not g.play(cons_user):
     gotoxy (0, 2)
-    g.field.expose(aaa, bbb, None)
+    g.field.expose(next_column_in_line, next_line, None)
     if g.check_remi():
         print ("Y'\aa\al\al\a \af\au\ac\ak\ai\an\ag \al\ao\ao\as\ae\ar\as\aG\aT\aF\aO")
         sys.exit(0)
 
 gotoxy (0, 2)
-g.field.expose(aaa, bbb, None)
+g.field.expose(next_column_in_line, next_line, None)
 
 print (g.players[g.current].color, end=" wins\n")
