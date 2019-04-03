@@ -143,7 +143,7 @@ class Game:
         self.coins = 0
 
     #player has won, when it returns true
-    def play(self, move_x, user):
+    def play(self, user):
         next_color = self.players[self.current].color
         self.current = (self.current + 1) % 2
         player = self.players[self.current]
@@ -151,16 +151,13 @@ class Game:
         x, y = 0, 0
 
         while not suc:
-            x = player.play(move_x, user)
+            x = player.play(user)
             suc, y = self.field.sink_in(x, player.color)
 
-        move_x (next_color, 0, user)
+        user.move_x (next_color, 0)
         self.coins = self.coins + 1
 
         return self.check_win(x, y)
-
-
-
 
 
 class DumbHumanPlayer:
@@ -176,21 +173,29 @@ class DumbHumanPlayer:
         self.down = down
         self.get_input = get_input
 
-    def play(self, move_x, user):
-        if move_x == None:
-            return -1
+    def play(self, user):
 
         ch = None
         while ch != self.down:
             ch = self.get_input()
             if ch == self.right:
-                move_x(self.color, -1, user)
+                user.move_x(self.color, -1)
             if ch == self.left:
-                move_x(self.color, 1, user)
+                user.move_x(self.color, 1)
 
-        return move_x(self.color, 0, user)
+        return user.move_x(self.color, 0)
 
 
+class SmartRandomPlayer:
+    def __init__ (self, color, width):
+        if color == None or color == 0:
+            return None
+
+        self.color = color
+        self.width = width
+
+    def play(self, user):
+        return random.randint(0, self.width-1)
 
 #class DumbBotPlayer:
 #    def __init__(self, color):
@@ -211,7 +216,7 @@ def bbb(user):
 
 
 p0 = DumbHumanPlayer("\x1b[31m0\x1b[37m", 'a', 'd', 's', getchar)    #red
-p1 = DumbHumanPlayer("\x1b[36m0\x1b[37m", 'j', 'l', 'k', getchar)    #cyan
+p1 = SmartRandomPlayer("\x1b[36m0\x1b[37m", 64)    #cyan
 g = Game(64, 8, p0, p1)
 
 cons_user = ConsoleUser(0, 0, 64);
